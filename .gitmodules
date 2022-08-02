@@ -1,0 +1,3 @@
+[submodule "EtheirysAPI"]
+	path = EtheirysAPI
+	url = git@github.com:EtheirysIO/api.git

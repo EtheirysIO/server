@@ -1,0 +1,42 @@
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=143.198.29.28;User=mare87916238971263;Password=769t1gioyu8ehbljnkasd76itygyuasd;Database=mare;MultipleActiveResultSets=true"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "EtheirysSynchronosServer.Authentication": "Warning",
+      "System.IO.IOException": "Warning"
+    },
+    "File": {
+      "BasePath": "logs",
+      "FileAccessMode": "KeepOpenAndAutoFlush",
+      "FileEncodingName": "utf-8",
+      "DateFormat": "yyyMMdd",
+      "MaxFileSize": 10485760,
+      "Files": [
+        {
+          "Path": "mare-<counter>.log"
+        }
+      ]
+    }
+  },
+  "UnusedFileRetentionPeriodInDays": 10,
+  "PurgeUnusedAccounts": true,
+  "PurgeUnusedAccountsPeriodInDays": 21,
+  "CacheDirectory": "/home/ethsync/ethsync-server/",
+  "AllowedHosts": "*",
+  "Kestrel": {
+    "Endpoints": {
+      "Https": {
+        "Url": "https://+:5535",
+        "Certificate": {
+          "Path": "/etc/letsencrypt/live/maresync98712364tyorhguibnjasdf.etheirys.io-0001/fullchain.pem",
+          "KeyPath": "/etc/letsencrypt/live/maresync98712364tyorhguibnjasdf.etheirys.io-0001/privkey.pem"
+        }
+      }
+    }
+  }
+}
