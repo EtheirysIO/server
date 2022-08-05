@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using EtheirysSynchronos.API;
 using EtheirysSynchronosServer.Data;
 using EtheirysSynchronosServer.Metrics;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
@@ -18,19 +19,21 @@ namespace EtheirysSynchronosServer.Hubs
     {
         private readonly SystemInfoService _systemInfoService;
         private readonly IConfiguration _configuration;
+        private readonly IHttpContextAccessor _contextAccessor;
         private readonly ILogger<MareHub> _logger;
         private readonly MareDbContext _dbContext;
 
-        public MareHub(MareDbContext mareDbContext, ILogger<MareHub> logger, SystemInfoService systemInfoService, IConfiguration configuration)
+        public MareHub(MareDbContext mareDbContext, ILogger<MareHub> logger, SystemInfoService systemInfoService, IConfiguration configuration, IHttpContextAccessor contextAccessor)
         {
             _systemInfoService = systemInfoService;
             _configuration = configuration;
+            _contextAccessor = contextAccessor;
             _logger = logger;
             _dbContext = mareDbContext;
         }
 
         [HubMethodName(Api.InvokeHeartbeat)]
-        public async Task<ConnectionDto> Heartbeat(string? characterIdentification)
+        public async Task<ConnectionDto> Heartbeat(string characterIdentification)
         {
             MareMetrics.InitializedConnections.Inc();
 
@@ -84,8 +87,8 @@ namespace EtheirysSynchronosServer.Hubs
 
         public override Task OnConnectedAsync()
         {
-            var feature = Context.Features.Get<IHttpConnectionFeature>();
-            _logger.LogInformation("Connection from " + feature.RemoteIpAddress);
+            var feature = Context.Features.Get<IHttpContextAccessor>();
+            _logger.LogInformation("Connection from " + _contextAccessor.GetIpAddress());
             MareMetrics.Connections.Inc();
             return base.OnConnectedAsync();
         }

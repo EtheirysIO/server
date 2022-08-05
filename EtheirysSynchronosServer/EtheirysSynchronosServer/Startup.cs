@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.SignalR;
 using Prometheus;
 using WebSocketOptions = Microsoft.AspNetCore.Builder.WebSocketOptions;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.Extensions.Logging;
+
 
 namespace EtheirysSynchronosServer
 {
@@ -41,6 +41,7 @@ namespace EtheirysSynchronosServer
                 hubOptions.StreamBufferCapacity = 200;
             });
 
+            services.AddHttpContextAccessor();
             services.AddSingleton<SystemInfoService, SystemInfoService>();
             services.AddSingleton<IUserIdProvider, IdBasedUserIdProvider>();
             services.AddTransient(_ => Configuration);
@@ -101,7 +102,10 @@ namespace EtheirysSynchronosServer
             app.UseAuthentication();
             app.UseAuthorization();
 
-
+            var metricServer = new KestrelMetricServer(2052);
+            metricServer.Start();
+            
+            
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapHub<MareHub>(Api.Path, options =>
@@ -110,8 +114,8 @@ namespace EtheirysSynchronosServer
                     options.TransportMaxBufferSize = 5242880;
                     options.Transports = HttpTransportType.WebSockets;
                 });
-
-                endpoints.MapMetrics();
+                
+                //endpoints.MapMetrics();
             });
         }
     }

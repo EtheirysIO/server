@@ -4,6 +4,16 @@
     <TargetFramework>net6.0</TargetFramework>
     <UserSecretsId>aspnet-EtheirysSynchronosServer-BA82A12A-0B30-463C-801D-B7E81318CD50</UserSecretsId>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
+    <PlatformTarget>x64</PlatformTarget>
+    <ProduceReferenceAssembly>True</ProduceReferenceAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DebugType>full</DebugType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DebugType>full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>

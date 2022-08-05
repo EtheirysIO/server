@@ -21,12 +21,12 @@ namespace EtheirysSynchronosServer.Authentication
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
             if (!Request.Headers.ContainsKey("Authorization"))
-                return AuthenticateResult.Fail("Failed Authorization");
+                return AuthenticateResult.Fail("Failed Authorization - No Auth in Header");
 
             var authHeader = Request.Headers["Authorization"].ToString();
 
             if (string.IsNullOrEmpty(authHeader))
-                return AuthenticateResult.Fail("Failed Authorization");
+                return AuthenticateResult.Fail("Failed Authorization - Null Header");
 
             using var sha256 = SHA256.Create();
             var hashedHeader = BitConverter.ToString(sha256.ComputeHash(Encoding.UTF8.GetBytes(authHeader))).Replace("-", "");
@@ -35,7 +35,7 @@ namespace EtheirysSynchronosServer.Authentication
 
             if (uid == null)
             {
-                return AuthenticateResult.Fail("Failed Authorization");
+                return AuthenticateResult.Fail("Failed Authorization - Null UID");
             }
 
             var claims = new List<Claim> {
