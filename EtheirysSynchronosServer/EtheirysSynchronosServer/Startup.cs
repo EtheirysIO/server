@@ -67,7 +67,6 @@ namespace EtheirysSynchronosServer
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -96,14 +95,17 @@ namespace EtheirysSynchronosServer
                 ServeUnknownFileTypes = true
             });
 
-            app.UseHttpMetrics();
             app.UseWebSockets(webSocketOptions);
+            app.UseHttpMetrics();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
+            
             var metricServer = new KestrelMetricServer(2052);
             metricServer.Start();
+
+            
             
             
             app.UseEndpoints(endpoints =>
@@ -114,8 +116,6 @@ namespace EtheirysSynchronosServer
                     options.TransportMaxBufferSize = 5242880;
                     options.Transports = HttpTransportType.WebSockets;
                 });
-                
-                //endpoints.MapMetrics();
             });
         }
     }
