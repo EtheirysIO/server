@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EtheirysSynchronosServer.Migrations
 {
-    [DbContext(typeof(MareDbContext))]
+    [DbContext(typeof(EthDbContext))]
     [Migration("20220629212721_AddBannedReason")]
     partial class AddBannedReason
     {

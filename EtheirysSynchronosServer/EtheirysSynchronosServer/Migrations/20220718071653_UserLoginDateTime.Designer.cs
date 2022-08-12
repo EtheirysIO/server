@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EtheirysSynchronosServer.Migrations
 {
-    [DbContext(typeof(MareDbContext))]
+    [DbContext(typeof(EthDbContext))]
     [Migration("20220718071653_UserLoginDateTime")]
     partial class UserLoginDateTime
     {

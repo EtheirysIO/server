@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EtheirysSynchronosServer.Hubs
 {
-    public partial class MareHub
+    public partial class EthHub
     {
         private bool IsAdmin => _dbContext.Users.Single(b => b.UID == AuthenticatedUserId).IsAdmin;
 

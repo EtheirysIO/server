@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 
 namespace EtheirysSynchronosServer.Hubs
 {
-    public partial class MareHub
+    public partial class EthHub
     {
         [Authorize(AuthenticationSchemes = SecretKeyAuthenticationHandler.AuthScheme)]
         [HubMethodName(Api.SendUserDeleteAccount)]
@@ -28,8 +28,8 @@ namespace EtheirysSynchronosServer.Hubs
             var ownPairData = await _dbContext.ClientPairs.Where(u => u.User.UID == userid).ToListAsync();
             var auth = await _dbContext.Auth.SingleAsync(u => u.UserUID == userid);
 
-            MareMetrics.Pairs.Dec(ownPairData.Count);
-            MareMetrics.PairsPaused.Dec(ownPairData.Count(c => c.IsPaused));
+            EthMetrics.Pairs.Dec(ownPairData.Count);
+            EthMetrics.PairsPaused.Dec(ownPairData.Count(c => c.IsPaused));
 
             _dbContext.RemoveRange(ownPairData);
             await _dbContext.SaveChangesAsync();
@@ -45,9 +45,9 @@ namespace EtheirysSynchronosServer.Hubs
                     }, userEntry.CharacterIdentification);
             }
 
-            MareMetrics.Pairs.Dec(otherPairData.Count());
-            MareMetrics.PairsPaused.Dec(otherPairData.Count(c => c.IsPaused));
-            MareMetrics.UsersRegistered.Dec();
+            EthMetrics.Pairs.Dec(otherPairData.Count());
+            EthMetrics.PairsPaused.Dec(otherPairData.Count(c => c.IsPaused));
+            EthMetrics.UsersRegistered.Dec();
 
             _dbContext.RemoveRange(otherPairData);
             _dbContext.Remove(userEntry);
@@ -130,8 +130,8 @@ namespace EtheirysSynchronosServer.Hubs
                     user.CharacterIdentification);
             }
 
-            MareMetrics.UserPushData.Inc();
-            MareMetrics.UserPushDataTo.Inc(visibleCharacterIds.Count);
+            EthMetrics.UserPushData.Inc();
+            EthMetrics.UserPushDataTo.Inc(visibleCharacterIds.Count);
         }
 
         [HubMethodName(Api.InvokeUserRegister)]
@@ -168,7 +168,7 @@ namespace EtheirysSynchronosServer.Hubs
 
             _logger.LogInformation("User registered: " + user.UID);
 
-            MareMetrics.UsersRegistered.Inc();
+            EthMetrics.UsersRegistered.Inc();
 
             await _dbContext.SaveChangesAsync();
             return computedHash;
@@ -228,7 +228,7 @@ namespace EtheirysSynchronosServer.Hubs
                 }
             }
 
-            MareMetrics.Pairs.Inc();
+            EthMetrics.Pairs.Inc();
         }
 
         [Authorize(AuthenticationSchemes = SecretKeyAuthenticationHandler.AuthScheme)]
@@ -270,11 +270,11 @@ namespace EtheirysSynchronosServer.Hubs
 
             if (isPaused)
             {
-                MareMetrics.PairsPaused.Inc();
+                EthMetrics.PairsPaused.Inc();
             }
             else
             {
-                MareMetrics.PairsPaused.Dec();
+                EthMetrics.PairsPaused.Dec();
             }
         }
 
@@ -318,7 +318,7 @@ namespace EtheirysSynchronosServer.Hubs
                 }
             }
 
-            MareMetrics.Pairs.Dec();
+            EthMetrics.Pairs.Dec();
         }
 
         private ClientPair OppositeEntry(string otherUID) =>

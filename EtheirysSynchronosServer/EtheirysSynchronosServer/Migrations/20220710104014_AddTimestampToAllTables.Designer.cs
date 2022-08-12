@@ -11,7 +11,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace EtheirysSynchronosServer.Migrations
 {
-    [DbContext(typeof(MareDbContext))]
+    [DbContext(typeof(EthDbContext))]
     [Migration("20220710104014_AddTimestampToAllTables")]
     partial class AddTimestampToAllTables
     {

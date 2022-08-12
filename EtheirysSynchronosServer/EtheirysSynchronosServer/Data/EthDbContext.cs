@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EtheirysSynchronosServer.Data
 {
-    public class MareDbContext : DbContext
+    public class EthDbContext : DbContext
     {
-        public MareDbContext(DbContextOptions<MareDbContext> options) : base(options)
+        public EthDbContext(DbContextOptions<EthDbContext> options) : base(options)
         {
         }
 

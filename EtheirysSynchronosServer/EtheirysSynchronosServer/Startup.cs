@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.SignalR;
 using Prometheus;
 using WebSocketOptions = Microsoft.AspNetCore.Builder.WebSocketOptions;
 using Microsoft.Extensions.FileProviders;
+using AspNetCoreRateLimit;
+//using EtheirysSynchronosServer.Throttling;
 
 
 namespace EtheirysSynchronosServer
@@ -33,35 +35,53 @@ namespace EtheirysSynchronosServer
         // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddHttpContextAccessor();
+
+            services.Configure<IpRateLimitOptions>(Configuration.GetSection("IpRateLimiting"));
+            services.Configure<IpRateLimitPolicies>(Configuration.GetSection("IpRateLimitPolicies"));
+
+            services.AddMemoryCache();
+            services.AddInMemoryRateLimiting();
+
+            services.AddSingleton<SystemInfoService, SystemInfoService>();
+            services.AddSingleton<IUserIdProvider, IdBasedUserIdProvider>();
+            services.AddTransient(_ => Configuration);
+
+            services.AddDbContext<EthDbContext>(options =>
+            {
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), builder =>
+                {
+                });
+            });
+
+            services.AddHostedService<FileCleanupService>();
+            services.AddHostedService(provider => provider.GetService<SystemInfoService>());
+            
+            services.AddAuthentication(options =>
+            {
+                options.DefaultScheme = SecretKeyAuthenticationHandler.AuthScheme;
+            })
+    .AddScheme<AuthenticationSchemeOptions, SecretKeyAuthenticationHandler>(SecretKeyAuthenticationHandler.AuthScheme, options => { });
+
+            services.AddSingleton<IRateLimitConfiguration, RateLimitConfiguration>();
+
             services.AddSignalR(hubOptions =>
             {
                 hubOptions.MaximumReceiveMessageSize = long.MaxValue;
                 hubOptions.EnableDetailedErrors = true;
                 hubOptions.MaximumParallelInvocationsPerClient = 10;
                 hubOptions.StreamBufferCapacity = 200;
+                //hubOptions.AddFilter<SignalRLimitFilter>();
             });
 
-            services.AddHttpContextAccessor();
-            services.AddSingleton<SystemInfoService, SystemInfoService>();
-            services.AddSingleton<IUserIdProvider, IdBasedUserIdProvider>();
-            services.AddTransient(_ => Configuration);
 
-            services.AddDbContextPool<MareDbContext>(options =>
-            {
-                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection"), builder =>
-                {
-                });
-            }, 32000);
 
-            services.AddHostedService<FileCleanupService>();
-            services.AddHostedService(provider => provider.GetService<SystemInfoService>());
 
-            services.AddDatabaseDeveloperPageExceptionFilter();
-            services.AddAuthentication(options =>
-                {
-                    options.DefaultScheme = SecretKeyAuthenticationHandler.AuthScheme;
-                })
-                .AddScheme<AuthenticationSchemeOptions, SecretKeyAuthenticationHandler>(SecretKeyAuthenticationHandler.AuthScheme, options => { });
+
+            
+            
+
+
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -79,6 +99,8 @@ namespace EtheirysSynchronosServer
                 app.UseHsts();
             }
 
+            app.UseIpRateLimiting();
+
             app.UseStaticFiles();
             app.UseHttpLogging();
 
@@ -87,6 +109,16 @@ namespace EtheirysSynchronosServer
             {
                 KeepAliveInterval = TimeSpan.FromSeconds(10),
             };
+            
+            
+            app.UseHttpMetrics();
+            app.UseWebSockets(webSocketOptions);
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            var metricServer = new KestrelMetricServer(2052);
+            metricServer.Start();
 
             app.UseStaticFiles(new StaticFileOptions()
             {
@@ -95,22 +127,9 @@ namespace EtheirysSynchronosServer
                 ServeUnknownFileTypes = true
             });
 
-            app.UseWebSockets(webSocketOptions);
-            app.UseHttpMetrics();
-
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            
-            var metricServer = new KestrelMetricServer(2052);
-            metricServer.Start();
-
-            
-            
-            
             app.UseEndpoints(endpoints =>
             {
-                endpoints.MapHub<MareHub>(Api.Path, options =>
+                endpoints.MapHub<EthHub>(Api.Path, options =>
                 {
                     options.ApplicationMaxBufferSize = 5242880;
                     options.TransportMaxBufferSize = 5242880;

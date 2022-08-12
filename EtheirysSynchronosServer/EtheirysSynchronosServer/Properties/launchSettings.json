@@ -2,13 +2,12 @@
   "profiles": {
     "EtheirysSynchronosServer": {
       "commandName": "Project",
-      "dotnetRunMessages": "true",
-      "launchBrowser": false,
-      //"applicationUrl": "https://localhost:5001;http://localhost:5000;https://192.168.1.124:5001;http://192.168.1.124:5000",
-      "applicationUrl": "http://localhost:5000;https://localhost:5001;https://darkarchon.internet-box.ch:5001",
+      "workingDirectory": "C:\\Users\\MrTrip\\EtheirysSync\\EtheirysSync.server\\EtheirysSynchronosServer\\EtheirysSynchronosServer\\bin\\Debug\\net6.0",
       "environmentVariables": {
-        "ASPNETCORE_ENVIRONMENT": "Development"
-      }
+        "ASPNETCORE_ENVIRONMENT": "Production"
+      },
+      "applicationUrl": "https://dev.etheirys.io:2096;https://localhost:2096;https://dev.etheirys.io:2052",
+      "dotnetRunMessages": "true"
     }
   }
 }

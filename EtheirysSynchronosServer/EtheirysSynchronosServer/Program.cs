@@ -20,13 +20,10 @@ namespace EtheirysSynchronosServer
             var hostBuilder = CreateHostBuilder(args);
             var host = hostBuilder.Build();
 
-            System.Threading.ThreadPool.GetMaxThreads(out int worker, out int io);
-            Console.WriteLine($"Before: Worker threads {worker}, IO threads {io}");
-
             using (var scope = host.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
-                var context = services.GetRequiredService<MareDbContext>();
+                var context = services.GetRequiredService<EthDbContext>();
                 context.Database.Migrate();
                 context.SaveChanges();
 
@@ -40,11 +37,7 @@ namespace EtheirysSynchronosServer
                 context.RemoveRange(looseFiles);
                 context.SaveChanges();
 
-                System.Threading.ThreadPool.SetMaxThreads(worker, context.Users.Count() * 5);
-                System.Threading.ThreadPool.GetMaxThreads(out int workerNew, out int ioNew);
-                Console.WriteLine($"After: Worker threads {workerNew}, IO threads {ioNew}");
-
-                MareMetrics.InitializeMetrics(context, services.GetRequiredService<IConfiguration>());
+                EthMetrics.InitializeMetrics(context, services.GetRequiredService<IConfiguration>());
             }
 
             host.Run();

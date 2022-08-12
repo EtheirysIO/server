@@ -50,7 +50,7 @@ namespace EtheirysSynchronosServer
             try
             {
                 using var scope = _services.CreateScope();
-                var dbContext = scope.ServiceProvider.GetService<MareDbContext>()!;
+                using var dbContext = scope.ServiceProvider.GetService<EthDbContext>()!;
 
                 var prevTime = DateTime.Now.Subtract(TimeSpan.FromDays(filesOlderThanDays));
 
@@ -66,7 +66,7 @@ namespace EtheirysSynchronosServer
                     }
                     else if (fi.LastAccessTime < prevTime)
                     {
-                        MareMetrics.FilesTotalSize.Dec(fi.Length);
+                        EthMetrics.FilesTotalSize.Dec(fi.Length);
                         _logger.LogInformation("File outdated: " + fileName);
                         dbContext.Files.Remove(file);
                         File.Delete(fileName);
@@ -108,8 +108,8 @@ namespace EtheirysSynchronosServer
                             var fi = new FileInfo(Path.Combine(_configuration["CacheDirectory"], file.Hash));
                             if (fi.Exists)
                             {
-                                MareMetrics.FilesTotalSize.Dec(fi.Length);
-                                MareMetrics.FilesTotal.Dec();
+                                EthMetrics.FilesTotalSize.Dec(fi.Length);
+                                EthMetrics.FilesTotal.Dec();
                                 fi.Delete();
                             }
                         }
@@ -122,11 +122,11 @@ namespace EtheirysSynchronosServer
                         var otherPairData = dbContext.ClientPairs.Include(u => u.User)
                             .Where(u => u.OtherUser.UID == user.UID).ToList();
 
-                        MareMetrics.Pairs.Dec(ownPairData.Count);
-                        MareMetrics.PairsPaused.Dec(ownPairData.Count(c => c.IsPaused));
-                        MareMetrics.Pairs.Dec(otherPairData.Count);
-                        MareMetrics.PairsPaused.Dec(otherPairData.Count(c => c.IsPaused));
-                        MareMetrics.UsersRegistered.Dec();
+                        EthMetrics.Pairs.Dec(ownPairData.Count);
+                        EthMetrics.PairsPaused.Dec(ownPairData.Count(c => c.IsPaused));
+                        EthMetrics.Pairs.Dec(otherPairData.Count);
+                        EthMetrics.PairsPaused.Dec(otherPairData.Count(c => c.IsPaused));
+                        EthMetrics.UsersRegistered.Dec();
 
                         dbContext.RemoveRange(otherPairData);
                         dbContext.Remove(auth);

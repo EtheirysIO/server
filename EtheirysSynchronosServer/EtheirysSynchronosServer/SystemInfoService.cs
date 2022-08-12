@@ -1,13 +1,13 @@
 ﻿using System;
-using System.Diagnostics;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading;
 using System.Threading.Tasks;
 using EtheirysSynchronos.API;
+using EtheirysSynchronosServer.Data;
 using EtheirysSynchronosServer.Hubs;
 using EtheirysSynchronosServer.Metrics;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -15,13 +15,15 @@ namespace EtheirysSynchronosServer;
 
 public class SystemInfoService : IHostedService, IDisposable
 {
+    private readonly IServiceProvider _services;
     private readonly ILogger<SystemInfoService> _logger;
-    private readonly IHubContext<MareHub> _hubContext;
+    private readonly IHubContext<EthHub> _hubContext;
     private Timer _timer;
     public SystemInfoDto SystemInfoDto { get; private set; } = new();
 
-    public SystemInfoService(ILogger<SystemInfoService> logger, IHubContext<MareHub> hubContext)
+    public SystemInfoService(IServiceProvider services, ILogger<SystemInfoService> logger, IHubContext<EthHub> hubContext)
     {
+        _services = services;
         _logger = logger;
         _hubContext = hubContext;
     }
@@ -30,74 +32,31 @@ public class SystemInfoService : IHostedService, IDisposable
     {
         _logger.LogInformation("System Info Service started");
 
-        _timer = new Timer(CalculateCpuUsage, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
+        _timer = new Timer(PushSystemInfo, null, TimeSpan.Zero, TimeSpan.FromSeconds(5));
 
         return Task.CompletedTask;
     }
 
-    private void CalculateCpuUsage(object state)
+    private void PushSystemInfo(object state)
     {
-        var startTime = DateTime.UtcNow;
-        double startCpuUsage = 0;
-        foreach (var process in Process.GetProcesses())
-        {
-            try
-            {
-                startCpuUsage += process.TotalProcessorTime.TotalMilliseconds;
-            }
-            catch { }
-        }
-        var networkOut = NetworkInterface.GetAllNetworkInterfaces().Sum(n => n.GetIPStatistics().BytesSent);
-        var networkIn = NetworkInterface.GetAllNetworkInterfaces().Sum(n => n.GetIPStatistics().BytesReceived);
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
+        ThreadPool.GetAvailableThreads(out int workerThreads, out int ioThreads);
+        _logger.LogInformation($"ThreadPool: {workerThreads} workers available, {ioThreads} IO workers available");
+        EthMetrics.AvailableWorkerThreads.Set(workerThreads);
+        EthMetrics.AvailableIOWorkerThreads.Set(ioThreads);
 
-        Thread.Sleep(TimeSpan.FromSeconds(5));
+        using var scope = _services.CreateScope();
+        using var db = scope.ServiceProvider.GetService<EthDbContext>();
 
-        stopWatch.Stop();
-        var endTime = DateTime.UtcNow;
-        double endCpuUsage = 0;
-        long ramUsage = 0;
-        foreach (var process in Process.GetProcesses())
-        {
-            try
-            {
-                endCpuUsage += process.TotalProcessorTime.TotalMilliseconds;
-                ramUsage += process.WorkingSet64;
-            }
-            catch { }
-        }
-        var endNetworkOut = NetworkInterface.GetAllNetworkInterfaces().Sum(n => n.GetIPStatistics().BytesSent);
-        var endNetworkIn = NetworkInterface.GetAllNetworkInterfaces().Sum(n => n.GetIPStatistics().BytesReceived);
-
-        var totalMsPassed = (endTime - startTime).TotalMilliseconds;
-        var totalSPassed = (endTime - startTime).TotalSeconds;
-
-        var cpuUsedMs = (endCpuUsage - startCpuUsage);
-        var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-        var bytesSent = endNetworkOut - networkOut;
-        var bytesReceived = endNetworkIn - networkIn;
-
-
-        var usedRAM = Process.GetCurrentProcess().WorkingSet64 + Process.GetProcessesByName("sqlservr").FirstOrDefault()?.WorkingSet64 ?? 0;
-
-        var cpuUsage = cpuUsageTotal * 100;
-        var totalNetworkOut = bytesSent / totalSPassed;
-        var totalNetworkIn = bytesReceived / totalSPassed;
-
-        MareMetrics.NetworkIn.Set(totalNetworkIn);
-        MareMetrics.NetworkOut.Set(totalNetworkOut);
-        MareMetrics.CPUUsage.Set(cpuUsage);
-        MareMetrics.RAMUsage.Set(usedRAM);
+        var users = db.Users.Count(c => c.CharacterIdentification != null);
 
         SystemInfoDto = new SystemInfoDto()
         {
             CacheUsage = 0,
-            CpuUsage = cpuUsage,
+            CpuUsage = 0,
             RAMUsage = 0,
-            NetworkIn = totalNetworkIn,
-            NetworkOut = totalNetworkOut,
-            OnlineUsers = (int)MareMetrics.AuthorizedConnections.Value,
+            NetworkIn = 0,
+            NetworkOut = 0,
+            OnlineUsers = users,
             UploadedFiles = 0
         };
 

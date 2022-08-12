@@ -15,27 +15,27 @@ using Microsoft.Extensions.Logging;
 
 namespace EtheirysSynchronosServer.Hubs
 {
-    public partial class MareHub : Hub
+    public partial class EthHub : Hub
     {
         private readonly SystemInfoService _systemInfoService;
         private readonly IConfiguration _configuration;
         private readonly IHttpContextAccessor _contextAccessor;
-        private readonly ILogger<MareHub> _logger;
-        private readonly MareDbContext _dbContext;
+        private readonly ILogger<EthHub> _logger;
+        private readonly EthDbContext _dbContext;
 
-        public MareHub(MareDbContext mareDbContext, ILogger<MareHub> logger, SystemInfoService systemInfoService, IConfiguration configuration, IHttpContextAccessor contextAccessor)
+        public EthHub(EthDbContext EthDbContext, ILogger<EthHub> logger, SystemInfoService systemInfoService, IConfiguration configuration, IHttpContextAccessor contextAccessor)
         {
             _systemInfoService = systemInfoService;
             _configuration = configuration;
             _contextAccessor = contextAccessor;
             _logger = logger;
-            _dbContext = mareDbContext;
+            _dbContext = EthDbContext;
         }
 
         [HubMethodName(Api.InvokeHeartbeat)]
         public async Task<ConnectionDto> Heartbeat(string characterIdentification)
         {
-            MareMetrics.InitializedConnections.Inc();
+            EthMetrics.InitializedConnections.Inc();
 
             var userId = Context.User!.Claims.SingleOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
@@ -58,7 +58,7 @@ namespace EtheirysSynchronosServer.Hubs
                 }
                 else if (string.IsNullOrEmpty(user.CharacterIdentification))
                 {
-                    MareMetrics.AuthorizedConnections.Inc();
+                    EthMetrics.AuthorizedConnections.Inc();
                 }
 
                 user.LastLoggedIn = DateTime.UtcNow;
@@ -89,18 +89,18 @@ namespace EtheirysSynchronosServer.Hubs
         {
             var feature = Context.Features.Get<IHttpContextAccessor>();
             _logger.LogInformation("Connection from " + _contextAccessor.GetIpAddress());
-            MareMetrics.Connections.Inc();
+            EthMetrics.Connections.Inc();
             return base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            MareMetrics.Connections.Dec();
+            EthMetrics.Connections.Dec();
 
             var user = await _dbContext.Users.AsNoTracking().SingleOrDefaultAsync(u => u.UID == AuthenticatedUserId);
             if (user != null && !string.IsNullOrEmpty(user.CharacterIdentification))
             {
-                MareMetrics.AuthorizedConnections.Dec();
+                EthMetrics.AuthorizedConnections.Dec();
                 _logger.LogInformation("Disconnect from " + AuthenticatedUserId);
 
                 var otherUsers = await _dbContext.ClientPairs.AsNoTracking()
